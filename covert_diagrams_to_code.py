@@ -1,11 +1,13 @@
+SRC_FILE = 'classdiagram.drawio'
+DEST_FILE = 'classes.ts'
+
 # %%
 import xml.etree.ElementTree as ET
 
 def convert():
     print("convert")
     # 1. Read the Draw.io file
-    file_path = "classdiagram.drawio"
-    with open(file_path, "r") as file:
+    with open(SRC_FILE, "r") as file:
         drawio_data = file.read()
 
     # 2. Extract the XML data
@@ -21,7 +23,7 @@ def convert():
 
     class_definitions = []
     firstclasscaptured = False
-    with open("classes.ts", "w") as file:
+    with open(DEST_FILE, "w") as file:
         
         for mx_cell in root.findall(".//mxCell"):
             vertex = mx_cell.get("vertex", '')
@@ -55,12 +57,9 @@ class FileChangeHandler(FileSystemEventHandler):
         # Call the function when a modification event occurs
         convert()
 
-# Define the path to the file you want to monitor
-file_path = 'classdiagram.drawio'
-
 # Create an observer and attach the event handler
 observer = Observer()
-observer.schedule(FileChangeHandler(), path=file_path, recursive=False)
+observer.schedule(FileChangeHandler(), path=SRC_FILE, recursive=False)
 
 # Start the observer
 observer.start()
