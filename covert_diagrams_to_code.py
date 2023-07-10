@@ -1,5 +1,6 @@
-SRC_FILE = 'classdiagram.drawio'
-DEST_FILE = 'classes.ts'
+SRC_FILE = '/home/axlireza/Projects/ENIGMA/Reservatron/classdiagram.drawio'
+DEST_FILE = '/home/axlireza/Projects/ENIGMA/Reservatron/classes.ts'
+DEST_XML_FILE = '/home/axlireza/Projects/ENIGMA/Reservatron/classes.xml'
 
 # %%
 import xml.etree.ElementTree as ET
@@ -17,12 +18,16 @@ def convert():
     end_index = drawio_data.find(end_tag) + len(end_tag)
     xml_data = drawio_data[start_index:end_index]
     # print(xml_data)
+    with open(DEST_XML_FILE, "w") as file: file.writelines(xml_data)
     
     # 3. Process the XML data
     root = ET.fromstring(xml_data)
 
     class_definitions = []
     firstclasscaptured = False
+    inclass = False
+    intype = False
+    firstitemoftype = True
     with open(DEST_FILE, "w") as file:
         
         for mx_cell in root.findall(".//mxCell"):
@@ -30,14 +35,26 @@ def convert():
             edge = mx_cell.get("edge", '')
             value = mx_cell.get("value", '')
 
-            # Process vertices (classes)
-            if value.find("class") >= 0:
+            if value.find("dtype") >= 0:
+                if inclass == True: file.writelines("}\n")
+                inclass = False
+                intype = True
+                firstclasscaptured = False
+                file.writelines("\ntype "+value.replace("dtype ", "")+" = ")
+                firstitemoftype = True
+            elif value.find("class") >= 0:
+                if intype == True: file.writelines("\n")
+                inclass = True
+                intype = False
                 if firstclasscaptured == True: file.writelines("}\n")
+                else: firstclasscaptured = True
                 file.writelines(value+" {\n")
-                firstclasscaptured = True
-            if value.find("+") >= 0:
-                for line in value.split("\n"):
-                    file.writelines("\t"+line.replace("+", "public")+";\n")
+            elif intype == True:
+                file.writelines("\""+value+"\"") if firstitemoftype else file.writelines(" | \""+value+"\"")
+                firstitemoftype = False
+            elif inclass == True and value.find("+") >= 0:
+                for line in value.replace("+", "public").replace("#", "private").split("\n"):
+                    if len(line) > 0: file.writelines("\t"+line+";\n")
         if firstclasscaptured == True: file.writelines("}")
 
 
